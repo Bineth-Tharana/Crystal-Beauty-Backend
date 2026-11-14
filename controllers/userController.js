@@ -282,6 +282,25 @@ export function getUser(req,res){
     }
 }
 
+export async function getAllUsers(req, res) {
+    if (!isAdmin(req)) {
+        res.status(403).json({
+            message: "You are not authorized to view users"
+        });
+        return;
+    }
+
+    try {
+        // never send password hashes to the browser
+        const users = await User.find().select("-password");
+        res.json(users);
+    } catch (err) {
+        res.status(500).json({
+            message: "Failed to get users"
+        });
+    }
+}
+
 export function isAdmin(req){
     if(req.user == null){
         return false;
