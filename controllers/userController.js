@@ -153,7 +153,7 @@ const transport = nodemailer.createTransport({
     secure: false,
     auth: {
         user: "bineththarana@gmail.com",
-        pass: "xhkkjngymepwlndm"
+        pass: process.env.GOOGLE_APP_PASSWORD
     }
 })
 export async function sendOTP(req,res) {
