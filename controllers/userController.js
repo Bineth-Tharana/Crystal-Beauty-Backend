@@ -301,6 +301,40 @@ export async function getAllUsers(req, res) {
     }
 }
 
+export async function blockUser(req, res) {
+    if (!isAdmin(req)) {
+        res.status(403).json({
+            message: "You are not authorized to block users"
+        });
+        return;
+    }
+
+    const email = req.params.email;
+
+    if (email === req.user.email) {
+        res.status(400).json({
+            message: "You cannot block your own account"
+        });
+        return;
+    }
+
+    try {
+        const result = await User.updateOne(
+            { email: email },
+            { isBlocked: req.body.isBlocked }
+        );
+
+        if (result.matchedCount === 0) {
+            res.status(404).json({ message: "User not found" });
+            return;
+        }
+
+        res.json({ message: "User updated successfully" });
+    } catch (err) {
+        res.status(500).json({ message: "Failed to update user" });
+    }
+}
+
 export function isAdmin(req){
     if(req.user == null){
         return false;
