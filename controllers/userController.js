@@ -138,6 +138,11 @@ export async function loginWithGoogle(req, res) {
       role: newUser.role,
     });
   } else {
+    if (user.isBlocked) {
+      return res.status(403).json({
+        message: "Your account has been blocked. Please contact support.",
+      });
+    }
     const token = jwt.sign(
       {
         email: user.email,
