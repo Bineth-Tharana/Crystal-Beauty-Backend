@@ -54,3 +54,15 @@ export async function createReview(req, res) {
     }
 }
 
+export async function getProductReviews(req, res) {
+    try {
+        const reviews = await Review
+            .find({ productId : req.params.productId, isApproved : true })
+            .select("-email")
+            .sort({ date : -1 });
+        res.json(reviews);
+    } catch (err) {
+        res.status(500).json({ message : "Failed to get reviews" });
+    }
+}
+
