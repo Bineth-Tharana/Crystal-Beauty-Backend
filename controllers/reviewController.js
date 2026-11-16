@@ -1,0 +1,122 @@
+import Review from "../models/review.js";
+import Product from "../models/product.js";
+import { isAdmin } from "./userController.js";
+
+export async function createReview(req, res) {
+    if (req.user == null) {
+        res.status(403).json({
+            message : "Please login to write a review"
+        });
+        return;
+    }
+
+    const rating = Number(req.body.rating);
+    const comment = (req.body.comment || "").trim();
+    const productId = req.body.productId;
+
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+        res.status(400).json({ message : "Rating must be between 1 and 5" });
+        return;
+    }
+    if (comment.length === 0 || comment.length > 1000) {
+        res.status(400).json({ message : "Comment must be 1 to 1000 characters" });
+        return;
+    }
+
+    try {
+        const product = await Product.findOne({ productId : productId });
+        if (product == null) {
+            res.status(404).json({ message : "Product not found" });
+            return;
+        }
+
+        const existing = await Review.findOne({
+            productId : productId,
+            email : req.user.email
+        });
+        if (existing != null) {
+            res.status(409).json({ message : "You have already reviewed this product" });
+            return;
+        }
+
+        const review = new Review({
+            productId : productId,
+            productName : product.name,
+            email : req.user.email,
+            name : req.user.firstName + " " + req.user.lastName,
+            rating : rating,
+            comment : comment
+        });
+        await review.save();
+
+        res.status(201).json({ message : "Review added successfully" });
+    } catch (err) {
+        res.status(500).json({ message : "Failed to add review" });
+    }
+}
+
+export async function getProductReviews(req, res) {
+    try {
+        const reviews = await Review
+            .find({ productId : req.params.productId, isApproved : true })
+            .select("-email")
+            .sort({ date : -1 });
+        res.json(reviews);
+    } catch (err) {
+        res.status(500).json({ message : "Failed to get reviews" });
+    }
+}
+
+export async function getAllReviews(req, res) {
+    if (!isAdmin(req)) {
+        res.status(403).json({ message : "You are not authorized to view reviews" });
+        return;
+    }
+
+    try {
+        const reviews = await Review.find().sort({ date : -1 });
+        res.json(reviews);
+    } catch (err) {
+        res.status(500).json({ message : "Failed to get reviews" });
+    }
+}
+
+// Admin: show / hide a review
+export async function setReviewVisibility(req, res) {
+    if (!isAdmin(req)) {
+        res.status(403).json({ message : "You are not authorized to update reviews" });
+        return;
+    }
+
+    try {
+        const result = await Review.updateOne(
+            { _id : req.params.id },
+            { isApproved : req.body.isApproved === true }
+        );
+        if (result.matchedCount === 0) {
+            res.status(404).json({ message : "Review not found" });
+            return;
+        }
+        res.json({ message : "Review updated successfully" });
+    } catch (err) {
+        res.status(500).json({ message : "Failed to update review" });
+    }
+}
+
+export async function deleteReview(req, res) {
+    if (!isAdmin(req)) {
+        res.status(403).json({ message : "You are not authorized to delete reviews" });
+        return;
+    }
+
+    try {
+        const result = await Review.deleteOne({ _id : req.params.id });
+        if (result.deletedCount === 0) {
+            res.status(404).json({ message : "Review not found" });
+            return;
+        }
+        res.json({ message : "Review deleted successfully" });
+    } catch (err) {
+        res.status(500).json({ message : "Failed to delete review" });
+    }
+}
