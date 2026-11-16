@@ -1,5 +1,6 @@
 import Review from "../models/review.js";
 import Product from "../models/product.js";
+import { isAdmin } from "./userController.js";
 
 export async function createReview(req, res) {
     if (req.user == null) {
@@ -66,3 +67,16 @@ export async function getProductReviews(req, res) {
     }
 }
 
+export async function getAllReviews(req, res) {
+    if (!isAdmin(req)) {
+        res.status(403).json({ message : "You are not authorized to view reviews" });
+        return;
+    }
+
+    try {
+        const reviews = await Review.find().sort({ date : -1 });
+        res.json(reviews);
+    } catch (err) {
+        res.status(500).json({ message : "Failed to get reviews" });
+    }
+}
