@@ -80,3 +80,25 @@ export async function getAllReviews(req, res) {
         res.status(500).json({ message : "Failed to get reviews" });
     }
 }
+
+// Admin: show / hide a review
+export async function setReviewVisibility(req, res) {
+    if (!isAdmin(req)) {
+        res.status(403).json({ message : "You are not authorized to update reviews" });
+        return;
+    }
+
+    try {
+        const result = await Review.updateOne(
+            { _id : req.params.id },
+            { isApproved : req.body.isApproved === true }
+        );
+        if (result.matchedCount === 0) {
+            res.status(404).json({ message : "Review not found" });
+            return;
+        }
+        res.json({ message : "Review updated successfully" });
+    } catch (err) {
+        res.status(500).json({ message : "Failed to update review" });
+    }
+}
