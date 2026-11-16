@@ -102,3 +102,21 @@ export async function setReviewVisibility(req, res) {
         res.status(500).json({ message : "Failed to update review" });
     }
 }
+
+export async function deleteReview(req, res) {
+    if (!isAdmin(req)) {
+        res.status(403).json({ message : "You are not authorized to delete reviews" });
+        return;
+    }
+
+    try {
+        const result = await Review.deleteOne({ _id : req.params.id });
+        if (result.deletedCount === 0) {
+            res.status(404).json({ message : "Review not found" });
+            return;
+        }
+        res.json({ message : "Review deleted successfully" });
+    } catch (err) {
+        res.status(500).json({ message : "Failed to delete review" });
+    }
+}
