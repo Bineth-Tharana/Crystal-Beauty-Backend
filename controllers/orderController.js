@@ -78,7 +78,7 @@ export async function createOrder(req, res) {
       address: orderInfo.address,
       total: 0,
       phone: orderInfo.phone,
-      Products: products,
+      products: products,
       labelledTotal: labelledTotal,
       total: total,
     });
